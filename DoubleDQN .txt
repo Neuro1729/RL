@@ -1,0 +1,100 @@
+The goal of reinforcement learning (Sutton and Barto, 1998)
+is to learn good policies for sequential decision problems,
+by optimizing a cumulative future reward signal. 
+
+If the maximum reward you can ever get from now on is small,
+but the Q-value becomes very large → it’s unrealistic.
+Example:
+
+Maximum reward per step = 1
+Episode length = 100
+So the biggest possible return is 100.
+
+If Q-learning suddenly gives you:
+Q(s, a) = 500
+That is impossible → overestimated.
+
+Qπ(s,a)=E[R1​+γR2​+γ2R3​+…∣s0​=s,a0​=a,then follow π]
+Qπ(s,a) is the average total reward you will get if you start with action a and then follow π
+Q∗(s,a)=πmax​Qπ(s,a)
+👉 Q*(s,a) is the best possible value of action a
+An optimal policy is easily derived from the optimal values by selecting the highest-valued action in each state.
+Temporal Difference = learn from the difference between what you predicted and what actually happened next.
+Estimates for the optimal action values can be learned using Q-learning, a form of temporal difference learning.
+Q(s,a)←Q(s,a)+α[r+γa′max​Q(s′,a′)−Q(s,a)]
+New Q = Old Q + learning_rate × (Better Guess − Old Q)
+
+Parametrized Q learning:
+Q(s,a;θ) : The predicted value of taking action a in state s, computed by a neural network with parameters θ. rather than storing all values we store a function parameter values that generate those values
+θt+1​=θt​+α(YtQ​−Q(St​,At​;θt​))∇θt​​Q(St​,At​;θt​)  YtQ​−Q = error of prediction 
+L=(YtQ​−Q(St​,At​;θ))2
+θ←θ−α∇θ​L
+gradient: ∇θ​L=−2(YtQ​−Q)∇θ​Q
+Standard Q-learning with neural networks is unstable and often diverges (blows up).
+DQN adds two stabilizing mechanisms:
+1️⃣ Target network
+2️⃣ Experience replay
+Target network : 
+You keep TWO networks: (a) Online network: parameters: θ used for learning and choosing actions , (b) Target network: parameters: θ⁻ used to compute targets Y
+θ⁻ is updated only once every τ steps . θt−​=θt​every τ steps
+Because the target becomes stable for many steps.
+Instead of chasing a moving target, the online network learns according to a fixed target network.
+This prevents the "moving target problem."
+YtDQN​≡Rt+1​+γamax​Q(St+1​,a;θt−​) instead of YtQ​=Rt+1​+γamax​Q(St+1​,a;θt​)
+Experience replay : Instead of learning from sequential data ,DQN stores all experience in a buffer: D={(St​,At​,Rt+1​,St+1​)} And each update uses a random mini-batch from this buffer.
+
+🟦 Original Double Q-learning Algorithm
+It maintains two value functions:
+θ (first Q-network)
+θ′ (second Q-network)
+At each update:
+You randomly choose one network to update
+The other is used for the evaluation step
+This creates independence.
+YtDoubleQ​=Rt+1​+γQ(St+1​,selection using θ argamax​Q(St+1​,a;θ)​​,θ′)
+Thrun & Schwartz (1993) result : 
+If each Q-value has random uniform error in [−ε,ε] and there are m actions then Q-learning overestimates by approximately: γϵm+1/m−1​ More actions → more overestimation
+What is the expectation of the maximum of m independent Uniform[-ε, ε] random variables? This is a known mathematical result: E[max(X1​,...,Xm​)] = ϵ*m+1/m−1
+They create a simple toy environment with:
+A continuous state space (real numbers).
+10 discrete actions per state.
+The true Q* values for all actions in that state are the same.
+Q\*(s,1)=Q\*(s,2)....
+Thus the optimal value function is just a function of the state, not of the action. Two different shapes are considered:
+Case 1: Sinusoidal Q\*(s,a)=sin(s) Case 2: Gaussian bump Q\*(s,a)=2e−s2 We can see overestimation here as many approximations will be there and we use max
+X-axis Training steps (in millions) , Y-axis Value estimates Orange line = DQN estimated value Blue line = Double DQN estimated value 
+Straight horizontal orange line = true value (after training) for DQN
+Straight horizontal blue line = true value for Double DQN
+These plots show:
+DQN’s Q-values increase too much (overestimation).
+Double DQN stays stable.
+✅ Step 1 — What is “normalized performance”?
+For each Atari game:
+They take the agent’s score and convert it to a normalized scale:
+Normalized Score = Agent score - Random score / Human score - Random score × 100%
+The table aggregates the 49 normalized scores In the median game:
+DQN performs at 93.5% of human performance
+Double DQN performs at 114.7% of human performance
+Why Pong works even with overestimation? 
+Because Pong is simple:
+few states
+few actions
+Q-value noise doesn’t change best action
+But in many Atari games:
+many actions
+many states
+small Q errors → wrong action chosen
+That’s why DQN collapses in hard games.
+Why they introduce a second evaluation: “Human Starts” ?
+Problem with normal evaluation:
+In Atari games with fixed start state:
+agent may memorize action sequence
+no real generalization
+not robust
+To fix this, they use:
+Human Starts Evaluation
+Take 100 states from a human expert’s gameplay trajectory
+Start the agent from each of those states
+Only count rewards after that point
+This tests generalization, not memorization.
+This is a much harder test.
